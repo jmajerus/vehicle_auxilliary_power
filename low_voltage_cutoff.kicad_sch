@@ -1,0 +1,55 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "92f542e7-1c02-4201-b95c-2bc5bf63956f")
+	(paper "A4")
+	(title_block
+		(title "Low Voltage Cutoff Module")
+		(date "2026-05-24")
+	)
+	(lib_symbols)
+	(text ".param V_CUTOFF = 11.5\nB1 LOAD_OUT GND V = V(BATT_IN, GND) > V_CUTOFF ? V(BATT_IN, GND) : 0\n"
+		(exclude_from_sim no)
+		(at 147.828 99.568 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "bb0c8820-0c23-468e-abbc-94b9ac3d6650")
+	)
+	(hierarchical_label "LOAD_OUT"
+		(shape input)
+		(at 76.2 71.12 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "7acfcd0f-cedd-4559-84be-0ab169a23c26")
+	)
+	(hierarchical_label "BATT_IN"
+		(shape input)
+		(at 74.93 48.26 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8fc078f0-9dc2-4f2b-bfda-1d0f04130c43")
+	)
+	(hierarchical_label "GND"
+		(shape input)
+		(at 76.2 95.25 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "e7ff1c14-1cdf-4e95-883a-0783e2fdfdf2")
+	)
+)

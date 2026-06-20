@@ -1,0 +1,56 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "20c41282-158a-4656-9f10-971cc700a929")
+	(paper "A4")
+	(title_block
+		(title "Solar Charge Controller")
+		(date "2026-05-24")
+	)
+	(lib_symbols)
+	(hierarchical_label "BATT"
+		(shape input)
+		(at 124.46 73.66 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "109d550f-a6bd-4f7d-852e-f6ccfe8e8d8e")
+	)
+	(hierarchical_label "GND"
+		(shape input)
+		(at 123.19 95.25 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "3d252b8a-26b5-4f14-a471-955440c4a57c")
+	)
+	(hierarchical_label "SOLAR_IN"
+		(shape input)
+		(at 124.46 62.23 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "53d8f04e-7f67-4a5f-bf91-5a9b7669f74e")
+	)
+	(hierarchical_label "LOAD_OUT"
+		(shape input)
+		(at 123.19 82.55 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "595c0dc9-4d32-44ef-b688-b4dcc86708d1")
+	)
+)

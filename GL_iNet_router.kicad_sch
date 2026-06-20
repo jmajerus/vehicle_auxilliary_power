@@ -1,0 +1,120 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "4a7ec0f7-0791-4708-8441-c4fabe772415")
+	(paper "A4")
+	(title_block
+		(title "CAN Bus Hub")
+	)
+	(lib_symbols)
+	(bus
+		(pts
+			(xy 73.66 44.45) (xy 199.39 44.45)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "50063f0e-1d08-41c1-9178-30ff222613f1")
+	)
+	(wire
+		(pts
+			(xy 106.68 74.93) (xy 106.68 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7b9f53e3-802d-44c4-831e-a9a59307d894")
+	)
+	(wire
+		(pts
+			(xy 106.68 48.26) (xy 110.49 44.45)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "89609d21-61a2-4d56-8dc4-dadfeb31fd43")
+	)
+	(hierarchical_label "Bus_S{Batt_Bus}"
+		(shape input)
+		(at 199.39 44.45 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "0fca19a7-ce7c-4bf6-8a5f-d961f91b51eb")
+	)
+	(sheet
+		(at 73.66 74.93)
+		(size 52.07 35.56)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "9c9bb600-abf2-4ce1-abcc-3ade5b3523e6")
+		(property "Sheetname" "ESP32 Canbus Module"
+			(at 73.66 74.2184 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "ESP32 Canbus Module.kicad_sch"
+			(at 73.66 111.0746 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "DC+" input
+			(at 106.68 74.93 90)
+			(uuid "790e8c8e-5701-4460-bc04-fccac13fddf2")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "DC-" input
+			(at 114.3 74.93 90)
+			(uuid "58bc5e93-b955-42da-8d28-775af7e13d13")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(instances
+			(project "vehicle_aux_power"
+				(path "/570d8b3c-76cc-4b8b-9b57-227b968d2867/65435264-7332-4be7-9a34-d8fb89525b55"
+					(page "10")
+				)
+				(path "/570d8b3c-76cc-4b8b-9b57-227b968d2867/12cf814c-db49-4de1-83e5-89f3248d56d3"
+					(page "12")
+				)
+				(path "/570d8b3c-76cc-4b8b-9b57-227b968d2867/0229ea9e-6a48-43ce-854c-6554bdfdd144"
+					(page "16")
+				)
+			)
+		)
+	)
+)

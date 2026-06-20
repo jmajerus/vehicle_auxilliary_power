@@ -1,0 +1,88 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "f09900a0-fbc2-4386-8476-b237f5e344c4")
+	(paper "A4")
+	(title_block
+		(title "12V Relay Module")
+		(date "2026-05-24")
+	)
+	(lib_symbols)
+	(text ".param V_TRIGGER = 2.5\nB1 NO COM V = V(IN, `DC-`) > V_TRIGGER ? 0 : 1Meg\nB2 NC COM V = V(IN, `DC-`) > V_TRIGGER ? 1Meg : 0\n"
+		(exclude_from_sim no)
+		(at 128.016 80.518 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7f2df37e-fe1e-408a-8d67-8288f7cfc41f")
+	)
+	(hierarchical_label "NO"
+		(shape input)
+		(at 191.77 31.75 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "18ed8a58-30c2-45a7-a72e-7bcf237f81a3")
+	)
+	(hierarchical_label "COM"
+		(shape input)
+		(at 189.23 43.18 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2e072448-dd21-4bed-9207-ff088f442ab7")
+	)
+	(hierarchical_label "NC"
+		(shape input)
+		(at 190.5 55.88 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "32f8231b-f5c8-42c7-9a40-e5641d7bb33e")
+	)
+	(hierarchical_label "DC+"
+		(shape input)
+		(at 59.69 34.29 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9e07f98c-89ab-452f-8e94-2efc8a03d112")
+	)
+	(hierarchical_label "DC-"
+		(shape input)
+		(at 59.69 45.72 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9e210e8a-398a-4bb0-a406-dd0caff1af08")
+	)
+	(hierarchical_label "IN"
+		(shape input)
+		(at 58.42 60.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d42b5172-4068-425c-aa99-01632458bc0d")
+	)
+)

@@ -1,0 +1,155 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "3535572f-0164-4e41-837c-b954a8d97d7f")
+	(paper "A4")
+	(title_block
+		(title "Banvie Keyless Entry System")
+		(date "2026-05-24")
+	)
+	(lib_symbols)
+	(hierarchical_label "White{slash}Black"
+		(shape input)
+		(at 27.94 57.15 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "1a00b63b-72cf-4dcf-9ce1-ab754a3cf03d")
+	)
+	(hierarchical_label "Red{slash}Black"
+		(shape input)
+		(at 26.67 118.11 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "244c79ea-8073-44a1-9a6b-51aa211ff9eb")
+	)
+	(hierarchical_label "Red 3-pin"
+		(shape input)
+		(at 26.67 156.21 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "29091561-259c-4eef-88a7-ef3d586ba287")
+	)
+	(hierarchical_label "Brown"
+		(shape input)
+		(at 26.67 80.01 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "37c6fbb8-6241-4a09-987e-45d186e235d5")
+	)
+	(hierarchical_label "Yellow"
+		(shape input)
+		(at 29.21 40.64 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "48ed93e5-d2a0-42a9-be63-305e55a2bcfc")
+	)
+	(hierarchical_label "Orange{slash}Black"
+		(shape input)
+		(at 27.94 49.53 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "75278a90-59c5-4610-94bc-321495579fb8")
+	)
+	(hierarchical_label "Orange"
+		(shape input)
+		(at 27.94 21.59 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "888c95ed-262d-4834-b300-e22bc4c05baa")
+	)
+	(hierarchical_label "White 3-pin"
+		(shape input)
+		(at 26.67 165.1 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8f688d59-9aa3-4ebe-a98b-54afbd886d21")
+	)
+	(hierarchical_label "Black"
+		(shape input)
+		(at 26.67 104.14 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "91ab2a83-c8f5-43b0-9c86-6b088e81fa71")
+	)
+	(hierarchical_label "White"
+		(shape input)
+		(at 26.67 29.21 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "97c2fddb-7f02-4851-a7b8-ffb6487c4378")
+	)
+	(hierarchical_label "Yellow{slash}Black"
+		(shape input)
+		(at 27.94 69.85 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9f338b16-7943-44c6-ba6b-aa453cfbb870")
+	)
+	(hierarchical_label "Orange 3-pin"
+		(shape input)
+		(at 26.67 172.72 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "ae7059f7-1805-4b43-acb1-50f2f725e747")
+	)
+	(hierarchical_label "Red"
+		(shape input)
+		(at 29.21 91.44 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "f508deb6-f75f-4f69-aa96-ae198ea202c1")
+	)
+)

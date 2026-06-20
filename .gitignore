@@ -1,0 +1,25 @@
+# KiCad auto-save and backup files
+*-backups/
+*.kicad_sch-bak
+*.kicad_pcb-bak
+_autosave-*
+\#auto_saved_files\#
+*.lck
+~*
+*.tmp
+fp-info-cache
+
+# KiCad export/manufacturing outputs
+outputs/
+gerbers/
+*.gbr
+*.drl
+*.dxf
+*.pos
+*.rpt
+*.d356
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini

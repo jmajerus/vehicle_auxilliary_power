@@ -1,0 +1,13 @@
+Plotted to '/home/john/Pictures/Project/vehicle_aux_power.pdf'.
+
+Info: Done.
+Info: Output directory '/home/john/Pictures/Project/aux-power.pdf' created.
+Plotted to '/home/john/Pictures/Project/aux-power.pdf/vehicle_aux_power.pdf'.
+
+Info: Done.
+Plotted to '/home/john/Pictures/Project/aux-power.pdf/vehicle_aux_power.pdf'.
+
+Info: Done.
+Info: Done.
+Info: Done.
+Info: Done.
