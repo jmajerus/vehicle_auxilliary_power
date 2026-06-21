@@ -40,10 +40,32 @@
 
     // ── Dashboard ────────────────────────────────────────────────────────────
     {
+      "label": "Dashboard: Serve on http://localhost:8080",
+      "type": "shell",
+      "command": "firmware/sim/.venv/bin/python",
+      "args": ["-m", "http.server", "8080", "--directory", "firmware/display_node"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "sim",
+        "tabName": "Dashboard Server"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Serving HTTP",
+          "endsPattern": "Serving HTTP"
+        }
+      }
+    },
+    {
       "label": "Dashboard: Open in browser",
       "type": "shell",
       "command": "xdg-open",
-      "args": ["firmware/display_node/dashboard.html"],
+      "args": ["http://localhost:8080/dashboard.html"],
       "options": { "cwd": "${workspaceFolder}" },
       "presentation": { "reveal": "silent", "panel": "shared" },
       "problemMatcher": []
@@ -95,6 +117,7 @@
       "dependsOn": [
         "Broker: Start local Mosquitto",
         "Sim: Start telemetry simulator",
+        "Dashboard: Serve on http://localhost:8080",
         "Dashboard: Open in browser"
       ],
       "dependsOrder": "sequence",
