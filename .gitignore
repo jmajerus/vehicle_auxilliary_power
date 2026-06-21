@@ -19,6 +19,11 @@ gerbers/
 *.rpt
 *.d356
 
+# Python virtual environments
+.venv/
+__pycache__/
+*.pyc
+
 # OS-specific files
 .DS_Store
 Thumbs.db

@@ -1,0 +1,137 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ── Simulator ────────────────────────────────────────────────────────────
+    {
+      "label": "Sim: Start telemetry simulator",
+      "type": "shell",
+      "command": "firmware/sim/.venv/bin/python",
+      "args": ["firmware/sim/simulate_telemetry.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "sim",
+        "tabName": "Telemetry Simulator"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Sim: Start simulator (custom broker)",
+      "type": "shell",
+      "command": "firmware/sim/.venv/bin/python",
+      "args": [
+        "firmware/sim/simulate_telemetry.py",
+        "--host", "${input:brokerHost}",
+        "--prefix", "${input:topicPrefix}",
+        "--hz", "${input:updateHz}"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "sim",
+        "tabName": "Telemetry Simulator"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+
+    // ── Dashboard ────────────────────────────────────────────────────────────
+    {
+      "label": "Dashboard: Open in browser",
+      "type": "shell",
+      "command": "xdg-open",
+      "args": ["firmware/display_node/dashboard.html"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "silent", "panel": "shared" },
+      "problemMatcher": []
+    },
+
+    // ── Mosquitto (local dev broker) ─────────────────────────────────────────
+    {
+      "label": "Broker: Start local Mosquitto",
+      "type": "shell",
+      // Uses the project mosquitto.conf which includes the WebSocket listener.
+      // Requires mosquitto to be installed: sudo apt install mosquitto
+      "command": "mosquitto",
+      "args": ["-c", "firmware/glinet/mosquitto.conf", "-v"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "broker",
+        "tabName": "Mosquitto Broker"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "mosquitto version",
+          "endsPattern":   "running"
+        }
+      }
+    },
+    {
+      "label": "Broker: Monitor all MQTT topics",
+      "type": "shell",
+      "command": "mosquitto_sub",
+      "args": ["-h", "127.0.0.1", "-t", "#", "-v"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "broker",
+        "tabName": "MQTT Monitor"
+      },
+      "problemMatcher": []
+    },
+
+    // ── Combined ─────────────────────────────────────────────────────────────
+    {
+      "label": "Dev: Full local stack (broker + simulator + dashboard)",
+      "dependsOn": [
+        "Broker: Start local Mosquitto",
+        "Sim: Start telemetry simulator",
+        "Dashboard: Open in browser"
+      ],
+      "dependsOrder": "sequence",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+
+    // ── Venv management ──────────────────────────────────────────────────────
+    {
+      "label": "Sim: Install / update Python dependencies",
+      "type": "shell",
+      "command": "firmware/sim/.venv/bin/pip install -r firmware/sim/requirements.txt",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    }
+  ],
+
+  "inputs": [
+    {
+      "id": "brokerHost",
+      "type": "promptString",
+      "description": "MQTT broker hostname or IP",
+      "default": "192.168.8.1"
+    },
+    {
+      "id": "topicPrefix",
+      "type": "promptString",
+      "description": "MQTT topic prefix",
+      "default": "vehicle"
+    },
+    {
+      "id": "updateHz",
+      "type": "promptString",
+      "description": "Publish rate (Hz)",
+      "default": "10"
+    }
+  ]
+}
