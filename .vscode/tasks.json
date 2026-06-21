@@ -71,30 +71,17 @@
       "problemMatcher": []
     },
 
-    // ── Mosquitto (local dev broker) ─────────────────────────────────────────
+    // ── Mosquitto (system service on this machine) ──────────────────────────
     {
-      "label": "Broker: Start local Mosquitto",
+      "label": "Broker: Restart system Mosquitto",
       "type": "shell",
-      // Uses the project mosquitto.conf which includes the WebSocket listener.
-      // Requires mosquitto to be installed: sudo apt install mosquitto
-      "command": "mosquitto",
-      "args": ["-c", "firmware/glinet/mosquitto.conf", "-v"],
+      // The system Mosquitto (apt-installed) runs as a service and loads
+      // /etc/mosquitto/conf.d/websockets.conf for the WebSocket listener.
+      // Use this task after changes to that file, or if the broker stops.
+      "command": "sudo systemctl restart mosquitto && echo 'Mosquitto restarted'",
       "options": { "cwd": "${workspaceFolder}" },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "group": "broker",
-        "tabName": "Mosquitto Broker"
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": { "regexp": "^$" },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "mosquitto version",
-          "endsPattern":   "running"
-        }
-      }
+      "presentation": { "reveal": "always", "panel": "shared", "tabName": "Broker" },
+      "problemMatcher": []
     },
     {
       "label": "Broker: Monitor all MQTT topics",
@@ -115,7 +102,6 @@
     {
       "label": "Dev: Full local stack (broker + simulator + dashboard)",
       "dependsOn": [
-        "Broker: Start local Mosquitto",
         "Sim: Start telemetry simulator",
         "Dashboard: Serve on http://localhost:8080",
         "Dashboard: Open in browser"
