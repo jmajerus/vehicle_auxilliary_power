@@ -92,10 +92,6 @@
       line-height: 1;
     }
 
-    /* ── Stale data dimming ──────────────────────────────────────────────── */
-    .gauge-card          { transition: opacity 0.6s; }
-    .gauge-card.stale    { opacity: 0.35; }
-
     /* ── Settings bar ────────────────────────────────────────────────────── */
     .settings {
       display: flex;
@@ -147,43 +143,6 @@
       gap: 1rem;
     }
 
-    .gauge-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 0.9rem 0.5rem 0.6rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.1rem;
-    }
-
-    .gauge-label {
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .gauge-svg { width: 150px; height: 130px; overflow: visible; }
-
-    .g-track { stroke: #1e3a5f; }   /* background arc */
-    .g-arc   { transition: stroke-dasharray 0.12s linear,
-                            stroke          0.3s ease; }
-
-    .g-val {
-      font-family: 'Courier New', monospace;
-      font-size: 20px;
-      font-weight: 700;
-      fill: var(--text);
-      transition: fill 0.3s;
-    }
-
-    .g-unit {
-      font-size: 10px;
-      fill: var(--muted);
-    }
   </style>
 </head>
 <body>
@@ -217,147 +176,179 @@
 
 <div class="gauges">
 
-  <!-- Each gauge: SVG arc via stroke-dasharray trick.
-       r=60  cx=75 cy=78
-       Circumference = 2π×60 ≈ 376.99
-       240° arc (GAUGE_LEN) ≈ 251.33   gap ≈ 125.66
-       transform="rotate(150,75,78)" starts the arc at ~8-o'clock,
-       sweeping clockwise 240° to ~4-o'clock. -->
+  <!-- telemetry-gauge custom elements — each is fully self-contained.
+       Rendering, theming and stale-dimming live inside Shadow DOM.
+       el.update(value) is called by the MQTT message handler below. -->
 
-  <div class="gauge-card">
-    <div class="gauge-label">Engine RPM</div>
-    <svg class="gauge-svg" viewBox="0 0 150 130">
-      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
-        stroke-dasharray="251.33 125.66" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <circle id="rpm-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
-        stroke="#22c55e" stroke-width="10"
-        stroke-dasharray="0 376.99" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <text id="rpm-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
-      <text class="g-unit" x="75" y="101" text-anchor="middle">rpm</text>
-    </svg>
-  </div>
+  <telemetry-gauge id="rpm"
+    label="Engine RPM" unit="rpm"
+    min="0" max="7000"
+    warn="4500" crit="5500"
+    decimals="0"
+    base-color="#22c55e"></telemetry-gauge>
 
-  <div class="gauge-card">
-    <div class="gauge-label">Speed</div>
-    <svg class="gauge-svg" viewBox="0 0 150 130">
-      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
-        stroke-dasharray="251.33 125.66" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <circle id="speed-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
-        stroke="#3b82f6" stroke-width="10"
-        stroke-dasharray="0 376.99" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <text id="speed-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
-      <text class="g-unit" x="75" y="101" text-anchor="middle">km/h</text>
-    </svg>
-  </div>
+  <telemetry-gauge id="speed"
+    label="Speed" unit="km/h"
+    min="0" max="200"
+    decimals="0"
+    base-color="#3b82f6" warn-color="#3b82f6" crit-color="#3b82f6"></telemetry-gauge>
 
-  <div class="gauge-card">
-    <div class="gauge-label">Coolant Temp</div>
-    <svg class="gauge-svg" viewBox="0 0 150 130">
-      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
-        stroke-dasharray="251.33 125.66" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <circle id="temp-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
-        stroke="#22c55e" stroke-width="10"
-        stroke-dasharray="0 376.99" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <text id="temp-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
-      <text class="g-unit" x="75" y="101" text-anchor="middle">°C</text>
-    </svg>
-  </div>
+  <telemetry-gauge id="temp"
+    label="Coolant Temp" unit="°C"
+    min="40" max="130"
+    warn="100" crit="115"
+    decimals="0"
+    base-color="#22c55e"></telemetry-gauge>
 
-  <div class="gauge-card">
-    <div class="gauge-label">Aux Voltage</div>
-    <svg class="gauge-svg" viewBox="0 0 150 130">
-      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
-        stroke-dasharray="251.33 125.66" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <circle id="volt-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
-        stroke="#22c55e" stroke-width="10"
-        stroke-dasharray="0 376.99" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <text id="volt-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
-      <text class="g-unit" x="75" y="101" text-anchor="middle">V</text>
-    </svg>
-  </div>
+  <telemetry-gauge id="volt"
+    label="Aux Voltage" unit="V"
+    min="10" max="16"
+    warn="14.8" crit="15.5"
+    warn-low="11.5" crit-low="10.8"
+    decimals="2"
+    base-color="#22c55e"></telemetry-gauge>
 
-  <div class="gauge-card">
-    <!-- Current: 0 = center, negative = discharging, positive = charging.
-         Range mapped: -50 A (left) → 0 A (center) → +50 A (right) -->
-    <div class="gauge-label">Aux Current</div>
-    <svg class="gauge-svg" viewBox="0 0 150 130">
-      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
-        stroke-dasharray="251.33 125.66" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <circle id="amp-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
-        stroke="#22c55e" stroke-width="10"
-        stroke-dasharray="0 376.99" stroke-linecap="round"
-        transform="rotate(150 75 78)"/>
-      <text id="amp-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
-      <text class="g-unit" x="75" y="101" text-anchor="middle">A</text>
-      <!-- Centre tick mark at 0 A -->
-      <line x1="75" y1="20" x2="75" y2="28" stroke="#64748b" stroke-width="2"/>
-    </svg>
-  </div>
+  <!-- zero-mark draws a tick at the arc midpoint to mark 0 A -->
+  <telemetry-gauge id="amp"
+    label="Aux Current" unit="A"
+    min="-50" max="50"
+    warn="40" crit="48"
+    warn-low="-40" crit-low="-48"
+    decimals="1"
+    base-color="#22c55e"
+    zero-mark></telemetry-gauge>
 
 </div>
 
 <script>
-// ── Gauge constants ──────────────────────────────────────────────────────────
-const R    = 60;
-const CIRC = 2 * Math.PI * R;   // 376.99
-const ARC  = CIRC * (240 / 360); // 251.33  (the 240° visible portion)
+// ── TelemetryGauge — native Custom Element ───────────────────────────────────
+// Self-contained SVG arc gauge with Shadow DOM. All rendering and theming
+// live inside the element; the page only calls el.update(value).
+//
+// HTML attributes (set once, static):
+//   label, unit, min, max, decimals
+//   base-color, warn-color, crit-color
+//   warn, crit        — high thresholds
+//   warn-low, crit-low — low thresholds (e.g. low voltage / high discharge)
+//   zero-mark         — boolean; draws a centre tick on the arc (for ±A gauges)
+//
+// Public API:
+//   el.update(value)   — push a new reading
+//   el.stale = bool    — dim/undim (set by the MQTT stale-data timer)
+{
+  const _R    = 60;
+  const _CIRC = 2 * Math.PI * _R;     // 376.99
+  const _ARC  = _CIRC * (240 / 360);  // 251.33 — 240° visible arc
 
-// Gauge definitions: min/max ranges and colour thresholds.
-// warnLow / critLow apply to the lower end (e.g. low voltage).
-const GAUGES = {
-  rpm:   { arc: null, val: null, min: 0,    max: 7000,
-           warn: 4500, crit: 5500, decimals: 0,
-           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
-  speed: { arc: null, val: null, min: 0,    max: 200,
-           warn: 9999, crit: 9999, decimals: 0,
-           base: '#3b82f6', warnC: '#3b82f6', critC: '#3b82f6' },
-  temp:  { arc: null, val: null, min: 40,   max: 130,
-           warn: 100,  crit: 115,  decimals: 0,
-           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
-  volt:  { arc: null, val: null, min: 10,   max: 16,
-           warnLow: 11.5, critLow: 10.8, decimals: 2,
-           warn: 14.8, crit: 15.5,
-           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
-  amp:   { arc: null, val: null, min: -50,  max: 50,
-           warn: 40,   crit: 48,   warnLow: -40, critLow: -48, decimals: 1,
-           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
-};
+  class TelemetryGauge extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;  // already built on browser upgrade
+      this.attachShadow({ mode: 'open' });
+      this._build();
+    }
 
-// Cache DOM references once the page has loaded.
-for (const [id, g] of Object.entries(GAUGES)) {
-  g.arc = document.getElementById(`${id}-arc`);
-  g.val = document.getElementById(`${id}-val`);
+    // ── Public API ───────────────────────────────────────────────────────
+    update(raw) {
+      if (!this._arc) return;
+      const a = n => this.getAttribute(n);
+      const min     = +a('min') || 0,  max = +a('max') || 100;
+      const warn    = this.hasAttribute('warn')     ? +a('warn')     :  Infinity;
+      const crit    = this.hasAttribute('crit')     ? +a('crit')     :  Infinity;
+      const warnLow = this.hasAttribute('warn-low') ? +a('warn-low') : -Infinity;
+      const critLow = this.hasAttribute('crit-low') ? +a('crit-low') : -Infinity;
+      const warnC   = a('warn-color') || '#eab308';
+      const critC   = a('crit-color') || '#ef4444';
+      const dec     = +(a('decimals') ?? 0);
+
+      const frac   = Math.max(0, Math.min(1, (raw - min) / (max - min)));
+      const filled = (_ARC * frac).toFixed(2);
+      this._arc.setAttribute('stroke-dasharray', `${filled} ${(_CIRC - filled).toFixed(2)}`);
+
+      const color = (raw >= crit  || raw <= critLow) ? critC
+                  : (raw >= warn  || raw <= warnLow) ? warnC
+                  : this._base;
+      this._arc.setAttribute('stroke', color);
+      this._val.setAttribute('fill',   color);
+      this._val.textContent = raw.toFixed(dec);
+    }
+
+    set stale(flag) {
+      flag ? this.setAttribute('stale', '') : this.removeAttribute('stale');
+    }
+
+    // ── Private ──────────────────────────────────────────────────────────
+    _build() {
+      const label = this.getAttribute('label')      ?? '';
+      const unit  = this.getAttribute('unit')       ?? '';
+      this._base  = this.getAttribute('base-color') ?? '#22c55e';
+      const zm    = this.hasAttribute('zero-mark');
+
+      this.shadowRoot.innerHTML = `
+        <style>
+          :host              { display: contents; }
+          :host([stale]) .card { opacity: 0.35; }
+          .card {
+            background:     var(--card,   #1e293b);
+            border:         1px solid var(--border, #334155);
+            border-radius:  0.75rem;
+            padding:        0.9rem 0.5rem 0.6rem;
+            display:        flex;
+            flex-direction: column;
+            align-items:    center;
+            gap:            0.1rem;
+            transition:     opacity 0.6s;
+          }
+          .lbl {
+            font-family:    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size:      0.68rem;
+            font-weight:    600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color:          var(--muted, #64748b);
+          }
+          svg  { width: 150px; height: 130px; overflow: visible; }
+          .trk { stroke: #1e3a5f; }
+          .arc { transition: stroke-dasharray 0.12s linear, stroke 0.3s ease; }
+          .num {
+            font-family: 'Courier New', monospace;
+            font-size:   20px;
+            font-weight: 700;
+            fill:        var(--text, #e2e8f0);
+            transition:  fill 0.3s;
+          }
+          .unt { font-size: 10px; fill: var(--muted, #64748b); }
+        </style>
+        <div class="card">
+          <div class="lbl">${label}</div>
+          <svg viewBox="0 0 150 130">
+            <circle class="trk" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+              stroke-dasharray="251.33 125.66" stroke-linecap="round"
+              transform="rotate(150 75 78)"/>
+            <circle class="arc" cx="75" cy="78" r="60" fill="none"
+              stroke="${this._base}" stroke-width="10"
+              stroke-dasharray="0 376.99" stroke-linecap="round"
+              transform="rotate(150 75 78)"/>
+            <text class="num" x="75" y="83" text-anchor="middle">—</text>
+            <text class="unt" x="75" y="101" text-anchor="middle">${unit}</text>
+            ${zm ? '<line x1="75" y1="20" x2="75" y2="28" stroke="#64748b" stroke-width="2"/>' : ''}
+          </svg>
+        </div>`;
+
+      this._arc = this.shadowRoot.querySelector('.arc');
+      this._val = this.shadowRoot.querySelector('.num');
+    }
+  }
+
+  customElements.define('telemetry-gauge', TelemetryGauge);
 }
 
+// ── Gauge helpers ─────────────────────────────────────────────────────────────
 function updateGauge(id, raw) {
-  const g = GAUGES[id];
-  if (!g) return;
+  document.getElementById(id)?.update(raw);
+}
 
-  const clamped  = Math.max(g.min, Math.min(g.max, raw));
-  const fraction = (clamped - g.min) / (g.max - g.min);
-  const filled   = (ARC * fraction).toFixed(2);
-  const gap      = (CIRC - filled).toFixed(2);
-  g.arc.setAttribute('stroke-dasharray', `${filled} ${gap}`);
-
-  // Colour by threshold (high and low).
-  let color = g.base;
-  if (raw >= g.crit || raw <= (g.critLow ?? -Infinity)) {
-    color = g.critC;
-  } else if (raw >= g.warn || raw <= (g.warnLow ?? -Infinity)) {
-    color = g.warnC;
-  }
-  g.arc.setAttribute('stroke', color);
-  g.val.setAttribute('fill',   color);
-  g.val.textContent = raw.toFixed(g.decimals);
+function setStale(stale) {
+  document.querySelectorAll('telemetry-gauge').forEach(el => el.stale = stale);
 }
 
 // ── MQTT ──────────────────────────────────────────────────────────────────────
@@ -457,12 +448,7 @@ function dismissError() {
   document.getElementById('error-banner').classList.remove('visible');
 }
 
-// Dims all gauge cards when no data has arrived recently.
-function setStale(stale) {
-  document.querySelectorAll('.gauge-card').forEach(
-    el => el.classList.toggle('stale', stale)
-  );
-}
+
 
 function resetStaleTimer() {
   setStale(false);
