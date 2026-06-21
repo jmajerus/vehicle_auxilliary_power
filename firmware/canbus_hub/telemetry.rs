@@ -10,6 +10,7 @@
 // any outboard board (Arduino, Pico, etc.) can deserialize the byte array.
 
 #[repr(C)]
+#[derive(Clone, Default)]
 pub struct CarTelemetry {
     /// Engine RPM from OBD2 PID 0x0C (range 0–16383)
     pub engine_rpm: u16,
