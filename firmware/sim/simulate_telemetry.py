@@ -35,7 +35,11 @@ def main() -> None:
     parser.add_argument("--hz",     default=10.0, type=float, help="Publish rate in Hz (default: 10)")
     args = parser.parse_args()
 
-    client = mqtt.Client(client_id="telemetry_sim", protocol=mqtt.MQTTv311)
+    client = mqtt.Client(
+        mqtt.CallbackAPIVersion.VERSION2,
+        client_id="telemetry_sim",
+        protocol=mqtt.MQTTv311,
+    )
     client.connect(args.host, args.port, keepalive=60)
     client.loop_start()
 
