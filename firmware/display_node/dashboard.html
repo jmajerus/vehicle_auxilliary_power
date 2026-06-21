@@ -67,6 +67,35 @@
     #dot.on  { background: var(--green); }
     #dot.mid { background: var(--yellow); }
 
+    /* ── Error banner ───────────────────────────────────────────────────── */
+    #error-banner {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      background: #450a0a;
+      border: 1px solid #ef4444;
+      border-radius: 0.6rem;
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem;
+      color: #fca5a5;
+    }
+    #error-banner.visible { display: flex; }
+    #error-banner strong   { color: #ef4444; }
+    #error-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0 0.2rem;
+      line-height: 1;
+    }
+
+    /* ── Stale data dimming ──────────────────────────────────────────────── */
+    .gauge-card          { transition: opacity 0.6s; }
+    .gauge-card.stale    { opacity: 0.35; }
+
     /* ── Settings bar ────────────────────────────────────────────────────── */
     .settings {
       display: flex;
@@ -167,10 +196,16 @@
   </div>
 </header>
 
+<div id="error-banner">
+  <strong>&#9888;</strong>
+  <span id="error-text"></span>
+  <button id="error-close" onclick="dismissError()" title="Dismiss">&#x2715;</button>
+</div>
+
 <div class="settings">
   <label>Broker WS
-    <input id="url"    type="text" value="ws://192.168.8.1:9001"
-           title="WebSocket URL of Mosquitto broker — local dev: ws://127.0.0.1:9001" />
+    <input id="url"    type="text" value="ws://127.0.0.1:9001"
+           title="Local dev: ws://127.0.0.1:9001 — In-car GL.iNet: ws://192.168.8.1:9001" />
   </label>
   <label>Prefix
     <input id="prefix" type="text" value="vehicle" style="width:90px"
@@ -326,31 +361,43 @@ function updateGauge(id, raw) {
 }
 
 // ── MQTT ──────────────────────────────────────────────────────────────────────
-let client = null;
+let client       = null;
+let staleTimer   = null;   // dims gauges if no messages arrive within this window
+const STALE_MS   = 5000;   // 5 s without data → gauges go dim
 
 function mqttConnect() {
+  dismissError();
   if (client) client.end(true);
 
   const url    = document.getElementById('url').value.trim();
   const prefix = document.getElementById('prefix').value.trim().replace(/\/$/, '');
+
+  if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
+    showError('Broker URL must start with ws:// or wss://');
+    return;
+  }
 
   setStatus('Connecting…', 'mid');
 
   client = mqtt.connect(url, {
     clientId:        'dashboard_' + Math.random().toString(16).slice(2, 8),
     keepalive:       30,
-    reconnectPeriod: 4000,
+    connectTimeout:  6000,
+    reconnectPeriod: 0,     // no auto-reconnect — we show an error instead
   });
 
   client.on('connect', () => {
+    dismissError();
     setStatus('Connected — ' + url, 'on');
     client.subscribe(`${prefix}/engine/#`);
     client.subscribe(`${prefix}/battery/#`);
+    resetStaleTimer();
   });
 
   client.on('message', (topic, payload) => {
     const val = parseFloat(payload.toString());
     if (isNaN(val)) return;
+    resetStaleTimer();
     const key = topic.split('/').pop();   // last path segment
     switch (key) {
       case 'rpm':              updateGauge('rpm',   val);         break;
@@ -361,20 +408,69 @@ function mqttConnect() {
     }
   });
 
-  client.on('error',     e  => setStatus('Error: ' + e.message,    ''));
-  client.on('offline',   () => setStatus('Offline — reconnecting…', 'mid'));
-  client.on('reconnect', () => setStatus('Reconnecting…',           'mid'));
-  client.on('close',     () => setStatus('Disconnected',            ''));
+  // MQTT.js wraps WebSocket close codes in the error message string.
+  // We parse it out to give the user actionable feedback.
+  client.on('error', e => {
+    const msg = e.message || String(e);
+    // Connection refused / host unreachable typically surfaces as code 1006
+    if (msg.includes('1006') || msg.toLowerCase().includes('refused')) {
+      showError(
+        `Cannot reach broker at ${url}. ` +
+        'Check that Mosquitto is running and the WebSocket listener (port 9001) is enabled.'
+      );
+    } else {
+      showError('MQTT error: ' + msg);
+    }
+    setStatus('Error', '');
+    setStale(true);
+  });
+
+  client.on('close', () => {
+    // Only show disconnect message if we were previously connected
+    // (avoids overwriting a more specific error message on initial failure).
+    if (document.getElementById('dot').className === 'on') {
+      setStatus('Disconnected', '');
+      showError('Connection to broker closed. Is the broker still running?');
+    }
+    setStale(true);
+  });
 }
 
 function mqttDisconnect() {
+  clearTimeout(staleTimer);
   if (client) { client.end(true); client = null; }
   setStatus('Disconnected', '');
+  setStale(true);
 }
 
 function setStatus(msg, dotClass) {
   document.getElementById('status-text').textContent = msg;
   document.getElementById('dot').className = dotClass;
+}
+
+function showError(msg) {
+  document.getElementById('error-text').textContent = msg;
+  document.getElementById('error-banner').classList.add('visible');
+}
+
+function dismissError() {
+  document.getElementById('error-banner').classList.remove('visible');
+}
+
+// Dims all gauge cards when no data has arrived recently.
+function setStale(stale) {
+  document.querySelectorAll('.gauge-card').forEach(
+    el => el.classList.toggle('stale', stale)
+  );
+}
+
+function resetStaleTimer() {
+  setStale(false);
+  clearTimeout(staleTimer);
+  staleTimer = setTimeout(() => {
+    setStale(true);
+    setStatus('No data — simulator stopped?', 'mid');
+  }, STALE_MS);
 }
 </script>
 </body>
