@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vehicle Telemetry</title>
+  <!--
+    MQTT.js via CDN. For offline / in-car use, download the file and replace
+    this tag with: <script src="mqtt.min.js"></script>
+    Download: https://unpkg.com/mqtt/dist/mqtt.min.js
+  -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    :root {
+      --bg:      #0f172a;
+      --card:    #1e293b;
+      --border:  #334155;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --green:   #22c55e;
+      --yellow:  #eab308;
+      --red:     #ef4444;
+      --blue:    #3b82f6;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      padding: 0.75rem 1.1rem;
+    }
+
+    h1 { font-size: 1rem; font-weight: 700; letter-spacing: 0.12em; }
+
+    #status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    #dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      transition: background 0.3s;
+    }
+    #dot.on  { background: var(--green); }
+    #dot.mid { background: var(--yellow); }
+
+    /* ── Settings bar ────────────────────────────────────────────────────── */
+    .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      padding: 0.7rem 1rem;
+    }
+
+    .settings label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .settings input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.35rem;
+      color: var(--text);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.82rem;
+      width: 200px;
+    }
+    .settings input:focus { outline: none; border-color: var(--blue); }
+
+    button {
+      border: none;
+      border-radius: 0.35rem;
+      padding: 0.36rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+    }
+    #btn-connect    { background: var(--blue); }
+    #btn-disconnect { background: #475569; }
+    button:hover    { opacity: 0.85; }
+
+    /* ── Gauge grid ──────────────────────────────────────────────────────── */
+    .gauges {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .gauge-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.9rem 0.5rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.1rem;
+    }
+
+    .gauge-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .gauge-svg { width: 150px; height: 130px; overflow: visible; }
+
+    .g-track { stroke: #1e3a5f; }   /* background arc */
+    .g-arc   { transition: stroke-dasharray 0.12s linear,
+                            stroke          0.3s ease; }
+
+    .g-val {
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      fill: var(--text);
+      transition: fill 0.3s;
+    }
+
+    .g-unit {
+      font-size: 10px;
+      fill: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>VEHICLE TELEMETRY</h1>
+  <div id="status">
+    <div id="dot"></div>
+    <span id="status-text">Disconnected</span>
+  </div>
+</header>
+
+<div class="settings">
+  <label>Broker WS
+    <input id="url"    type="text" value="ws://192.168.8.1:9001"
+           title="WebSocket URL of Mosquitto broker — local dev: ws://127.0.0.1:9001" />
+  </label>
+  <label>Prefix
+    <input id="prefix" type="text" value="vehicle" style="width:90px"
+           title="MQTT topic prefix matching your hub firmware" />
+  </label>
+  <button id="btn-connect"    onclick="mqttConnect()">Connect</button>
+  <button id="btn-disconnect" onclick="mqttDisconnect()">Disconnect</button>
+</div>
+
+<div class="gauges">
+
+  <!-- Each gauge: SVG arc via stroke-dasharray trick.
+       r=60  cx=75 cy=78
+       Circumference = 2π×60 ≈ 376.99
+       240° arc (GAUGE_LEN) ≈ 251.33   gap ≈ 125.66
+       transform="rotate(150,75,78)" starts the arc at ~8-o'clock,
+       sweeping clockwise 240° to ~4-o'clock. -->
+
+  <div class="gauge-card">
+    <div class="gauge-label">Engine RPM</div>
+    <svg class="gauge-svg" viewBox="0 0 150 130">
+      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+        stroke-dasharray="251.33 125.66" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <circle id="rpm-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
+        stroke="#22c55e" stroke-width="10"
+        stroke-dasharray="0 376.99" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <text id="rpm-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
+      <text class="g-unit" x="75" y="101" text-anchor="middle">rpm</text>
+    </svg>
+  </div>
+
+  <div class="gauge-card">
+    <div class="gauge-label">Speed</div>
+    <svg class="gauge-svg" viewBox="0 0 150 130">
+      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+        stroke-dasharray="251.33 125.66" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <circle id="speed-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
+        stroke="#3b82f6" stroke-width="10"
+        stroke-dasharray="0 376.99" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <text id="speed-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
+      <text class="g-unit" x="75" y="101" text-anchor="middle">km/h</text>
+    </svg>
+  </div>
+
+  <div class="gauge-card">
+    <div class="gauge-label">Coolant Temp</div>
+    <svg class="gauge-svg" viewBox="0 0 150 130">
+      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+        stroke-dasharray="251.33 125.66" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <circle id="temp-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
+        stroke="#22c55e" stroke-width="10"
+        stroke-dasharray="0 376.99" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <text id="temp-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
+      <text class="g-unit" x="75" y="101" text-anchor="middle">°C</text>
+    </svg>
+  </div>
+
+  <div class="gauge-card">
+    <div class="gauge-label">Aux Voltage</div>
+    <svg class="gauge-svg" viewBox="0 0 150 130">
+      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+        stroke-dasharray="251.33 125.66" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <circle id="volt-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
+        stroke="#22c55e" stroke-width="10"
+        stroke-dasharray="0 376.99" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <text id="volt-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
+      <text class="g-unit" x="75" y="101" text-anchor="middle">V</text>
+    </svg>
+  </div>
+
+  <div class="gauge-card">
+    <!-- Current: 0 = center, negative = discharging, positive = charging.
+         Range mapped: -50 A (left) → 0 A (center) → +50 A (right) -->
+    <div class="gauge-label">Aux Current</div>
+    <svg class="gauge-svg" viewBox="0 0 150 130">
+      <circle class="g-track" cx="75" cy="78" r="60" fill="none" stroke-width="10"
+        stroke-dasharray="251.33 125.66" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <circle id="amp-arc" class="g-arc" cx="75" cy="78" r="60" fill="none"
+        stroke="#22c55e" stroke-width="10"
+        stroke-dasharray="0 376.99" stroke-linecap="round"
+        transform="rotate(150 75 78)"/>
+      <text id="amp-val" class="g-val" x="75" y="83" text-anchor="middle">—</text>
+      <text class="g-unit" x="75" y="101" text-anchor="middle">A</text>
+      <!-- Centre tick mark at 0 A -->
+      <line x1="75" y1="20" x2="75" y2="28" stroke="#64748b" stroke-width="2"/>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+// ── Gauge constants ──────────────────────────────────────────────────────────
+const R    = 60;
+const CIRC = 2 * Math.PI * R;   // 376.99
+const ARC  = CIRC * (240 / 360); // 251.33  (the 240° visible portion)
+
+// Gauge definitions: min/max ranges and colour thresholds.
+// warnLow / critLow apply to the lower end (e.g. low voltage).
+const GAUGES = {
+  rpm:   { arc: null, val: null, min: 0,    max: 7000,
+           warn: 4500, crit: 5500, decimals: 0,
+           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
+  speed: { arc: null, val: null, min: 0,    max: 200,
+           warn: 9999, crit: 9999, decimals: 0,
+           base: '#3b82f6', warnC: '#3b82f6', critC: '#3b82f6' },
+  temp:  { arc: null, val: null, min: 40,   max: 130,
+           warn: 100,  crit: 115,  decimals: 0,
+           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
+  volt:  { arc: null, val: null, min: 10,   max: 16,
+           warnLow: 11.5, critLow: 10.8, decimals: 2,
+           warn: 14.8, crit: 15.5,
+           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
+  amp:   { arc: null, val: null, min: -50,  max: 50,
+           warn: 40,   crit: 48,   warnLow: -40, critLow: -48, decimals: 1,
+           base: '#22c55e', warnC: '#eab308', critC: '#ef4444' },
+};
+
+// Cache DOM references once the page has loaded.
+for (const [id, g] of Object.entries(GAUGES)) {
+  g.arc = document.getElementById(`${id}-arc`);
+  g.val = document.getElementById(`${id}-val`);
+}
+
+function updateGauge(id, raw) {
+  const g = GAUGES[id];
+  if (!g) return;
+
+  const clamped  = Math.max(g.min, Math.min(g.max, raw));
+  const fraction = (clamped - g.min) / (g.max - g.min);
+  const filled   = (ARC * fraction).toFixed(2);
+  const gap      = (CIRC - filled).toFixed(2);
+  g.arc.setAttribute('stroke-dasharray', `${filled} ${gap}`);
+
+  // Colour by threshold (high and low).
+  let color = g.base;
+  if (raw >= g.crit || raw <= (g.critLow ?? -Infinity)) {
+    color = g.critC;
+  } else if (raw >= g.warn || raw <= (g.warnLow ?? -Infinity)) {
+    color = g.warnC;
+  }
+  g.arc.setAttribute('stroke', color);
+  g.val.setAttribute('fill',   color);
+  g.val.textContent = raw.toFixed(g.decimals);
+}
+
+// ── MQTT ──────────────────────────────────────────────────────────────────────
+let client = null;
+
+function mqttConnect() {
+  if (client) client.end(true);
+
+  const url    = document.getElementById('url').value.trim();
+  const prefix = document.getElementById('prefix').value.trim().replace(/\/$/, '');
+
+  setStatus('Connecting…', 'mid');
+
+  client = mqtt.connect(url, {
+    clientId:        'dashboard_' + Math.random().toString(16).slice(2, 8),
+    keepalive:       30,
+    reconnectPeriod: 4000,
+  });
+
+  client.on('connect', () => {
+    setStatus('Connected — ' + url, 'on');
+    client.subscribe(`${prefix}/engine/#`);
+    client.subscribe(`${prefix}/battery/#`);
+  });
+
+  client.on('message', (topic, payload) => {
+    const val = parseFloat(payload.toString());
+    if (isNaN(val)) return;
+    const key = topic.split('/').pop();   // last path segment
+    switch (key) {
+      case 'rpm':              updateGauge('rpm',   val);         break;
+      case 'speed_kph':        updateGauge('speed', val);         break;
+      case 'coolant_temp':     updateGauge('temp',  val);         break;
+      case 'aux_voltage_mv':   updateGauge('volt',  val / 1000);  break;
+      case 'aux_current_ma':   updateGauge('amp',   val / 1000);  break;
+    }
+  });
+
+  client.on('error',     e  => setStatus('Error: ' + e.message,    ''));
+  client.on('offline',   () => setStatus('Offline — reconnecting…', 'mid'));
+  client.on('reconnect', () => setStatus('Reconnecting…',           'mid'));
+  client.on('close',     () => setStatus('Disconnected',            ''));
+}
+
+function mqttDisconnect() {
+  if (client) { client.end(true); client = null; }
+  setStatus('Disconnected', '');
+}
+
+function setStatus(msg, dotClass) {
+  document.getElementById('status-text').textContent = msg;
+  document.getElementById('dot').className = dotClass;
+}
+</script>
+</body>
+</html>
