@@ -1802,6 +1802,18 @@
 		(uuid "317d1614-c37a-4d2a-bb9c-3203cf2b264f")
 	)
 	(junction
+		(at 186.69 152.4)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4cb2d4c1-37d1-4867-a2d2-0c7a490e7a32")
+	)
+	(junction
+		(at 198.12 85.09)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "78127948-a9ff-4f99-896f-7b0fb8a8bc28")
+	)
+	(junction
 		(at 43.18 101.6)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1880,18 +1892,6 @@
 		(uuid "e9a15d3c-51e4-4f9b-ad3f-2a879164b773")
 	)
 	(junction
-		(at 186.69 167.64)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f4a1a804-2bcd-4ce6-b708-913c744e2a8b")
-	)
-	(junction
-		(at 189.23 85.09)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "fa1adb44-5377-477e-bb54-328a766eb7d6")
-	)
-	(junction
 		(at 80.01 151.13)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1899,7 +1899,7 @@
 	)
 	(bus
 		(pts
-			(xy 186.69 123.19) (xy 186.69 167.64)
+			(xy 186.69 123.19) (xy 186.69 152.4)
 		)
 		(stroke
 			(width 0)
@@ -1947,6 +1947,16 @@
 		)
 		(uuid "071ff1ee-b0ec-4277-931b-788d78e75446")
 	)
+	(bus
+		(pts
+			(xy 195.58 69.85) (xy 201.93 69.85)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "07c7ee35-f87e-4801-b2ff-88554778a6ab")
+	)
 	(wire
 		(pts
 			(xy 17.78 73.66) (xy 27.94 63.5)
@@ -1956,16 +1966,6 @@
 			(type default)
 		)
 		(uuid "0b4a9cd7-181c-4baa-9615-8591d458d5ea")
-	)
-	(bus
-		(pts
-			(xy 193.04 69.85) (xy 201.93 69.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1091118b-923c-4cb0-b1aa-e460cfc56a27")
 	)
 	(wire
 		(pts
@@ -2009,7 +2009,17 @@
 	)
 	(bus
 		(pts
-			(xy 219.71 85.09) (xy 193.04 85.09)
+			(xy 195.58 82.55) (xy 198.12 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "17c63f71-418a-4203-9e6d-d0d7f1b7df55")
+	)
+	(bus
+		(pts
+			(xy 219.71 85.09) (xy 198.12 85.09)
 		)
 		(stroke
 			(width 0)
@@ -2069,7 +2079,7 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 93.98) (xy 171.45 120.65)
+			(xy 119.38 93.98) (xy 146.05 120.65)
 		)
 		(stroke
 			(width 0)
@@ -2109,7 +2119,7 @@
 	)
 	(bus
 		(pts
-			(xy 151.13 121.92) (xy 182.88 121.92)
+			(xy 125.73 121.92) (xy 165.1 121.92)
 		)
 		(stroke
 			(width 0)
@@ -2237,6 +2247,16 @@
 		)
 		(uuid "4f7983a2-67d9-4e1e-b2d1-aaccea17c622")
 	)
+	(bus
+		(pts
+			(xy 195.58 69.85) (xy 195.58 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5465a7f7-a9df-420d-b35f-5fed3cfce0a4")
+	)
 	(wire
 		(pts
 			(xy 54.61 101.6) (xy 78.74 101.6)
@@ -2249,17 +2269,7 @@
 	)
 	(bus
 		(pts
-			(xy 193.04 81.28) (xy 189.23 85.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5d98db05-0f85-4076-bb72-16ea71f094d9")
-	)
-	(bus
-		(pts
-			(xy 125.73 55.88) (xy 179.07 55.88)
+			(xy 125.73 55.88) (xy 165.1 55.88)
 		)
 		(stroke
 			(width 0)
@@ -2377,16 +2387,6 @@
 		)
 		(uuid "79b1034c-62b4-4c34-a55a-0ccc552e18dc")
 	)
-	(bus
-		(pts
-			(xy 193.04 69.85) (xy 193.04 81.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7bc96c43-c9a3-4e8e-819d-db87241d559a")
-	)
 	(wire
 		(pts
 			(xy 49.53 35.56) (xy 63.5 21.59)
@@ -2417,26 +2417,6 @@
 		)
 		(uuid "810fcccc-3716-4e13-a6e6-6cc78b3197e8")
 	)
-	(bus
-		(pts
-			(xy 193.04 85.09) (xy 189.23 85.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "81eeb381-780d-48f7-afc7-4e83cf32d850")
-	)
-	(bus
-		(pts
-			(xy 201.93 152.4) (xy 186.69 167.64)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "832d6ffc-9606-42de-bbd8-cead83c201b8")
-	)
 	(wire
 		(pts
 			(xy 17.78 101.6) (xy 17.78 129.54)
@@ -2446,6 +2426,16 @@
 			(type default)
 		)
 		(uuid "86b30a24-811f-4c90-b884-0d6b13ddc5d7")
+	)
+	(bus
+		(pts
+			(xy 186.69 152.4) (xy 186.69 167.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "894abc36-ea05-4022-a830-de40d6b86d06")
 	)
 	(wire
 		(pts
@@ -2476,6 +2466,16 @@
 			(type default)
 		)
 		(uuid "8c8aad9f-4ef0-4e83-bb23-2d1cac74eabe")
+	)
+	(bus
+		(pts
+			(xy 198.12 85.09) (xy 193.04 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "904b1d88-d819-4aac-b54f-c4f67d0b16da")
 	)
 	(wire
 		(pts
@@ -2509,7 +2509,7 @@
 	)
 	(wire
 		(pts
-			(xy 158.75 132.08) (xy 168.91 121.92)
+			(xy 133.35 132.08) (xy 143.51 121.92)
 		)
 		(stroke
 			(width 0)
@@ -2757,6 +2757,16 @@
 		)
 		(uuid "d374c827-9576-4851-801e-f7765a422af5")
 	)
+	(bus
+		(pts
+			(xy 186.69 152.4) (xy 203.2 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d846181d-215e-4cb1-9c09-f69e31191b69")
+	)
 	(wire
 		(pts
 			(xy 80.01 86.36) (xy 87.63 93.98)
@@ -2779,7 +2789,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 121.92) (xy 171.45 120.65)
+			(xy 146.05 121.92) (xy 146.05 120.65)
 		)
 		(stroke
 			(width 0)
@@ -2809,7 +2819,7 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 132.08) (xy 158.75 132.08)
+			(xy 95.25 132.08) (xy 133.35 132.08)
 		)
 		(stroke
 			(width 0)
@@ -2819,7 +2829,7 @@
 	)
 	(wire
 		(pts
-			(xy 87.63 93.98) (xy 144.78 93.98)
+			(xy 87.63 93.98) (xy 119.38 93.98)
 		)
 		(stroke
 			(width 0)
@@ -2949,7 +2959,7 @@
 	)
 	(bus
 		(pts
-			(xy 189.23 85.09) (xy 107.95 85.09)
+			(xy 107.95 85.09) (xy 193.04 85.09)
 		)
 		(stroke
 			(width 0)
@@ -3028,7 +3038,7 @@
 		(uuid "95398d89-7116-4a35-bcbb-169e02416096")
 	)
 	(label "BUS_B{Batt_Bus}"
-		(at 151.13 121.92 0)
+		(at 125.73 121.92 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5714,8 +5724,8 @@
 		)
 	)
 	(sheet
-		(at 201.93 140.97)
-		(size 33.02 20.32)
+		(at 203.2 143.51)
+		(size 31.75 17.78)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -5730,7 +5740,7 @@
 		)
 		(uuid "8788bbe6-5030-45f8-b1e1-3899f88371f4")
 		(property "Sheetname" "Power_Window_Subsystem"
-			(at 201.93 140.2584 0)
+			(at 203.2 142.7984 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5739,7 +5749,7 @@
 			)
 		)
 		(property "Sheetfile" "Power_Window_Subsystem.kicad_sch"
-			(at 201.93 161.8746 0)
+			(at 203.2 161.8746 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5748,7 +5758,7 @@
 			)
 		)
 		(pin "Bus_K{Batt_Bus}" input
-			(at 201.93 152.4 180)
+			(at 203.2 152.4 180)
 			(uuid "c309ea77-2c61-4e76-afa6-d1e66cb01d8c")
 			(effects
 				(font
@@ -5919,8 +5929,8 @@
 		)
 	)
 	(sheet
-		(at 147.32 140.97)
-		(size 34.29 20.32)
+		(at 147.32 143.51)
+		(size 34.29 17.78)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -5935,7 +5945,7 @@
 		)
 		(uuid "e865279f-f17e-4581-aa43-06b7d1ede8ba")
 		(property "Sheetname" "Keyless_Entry_Subsystem"
-			(at 147.32 140.2584 0)
+			(at 147.32 142.7984 0)
 			(effects
 				(font
 					(size 1.27 1.27)
