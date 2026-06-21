@@ -1,8 +1,12 @@
 # Vehicle Auxiliary Power — KiCad Project
 
-A modular vehicle electronics project for a **2008 Chevy Cobalt**, adding an
-auxiliary battery bank, CAN bus telemetry, keyless entry, power windows, and a
-wireless sensor/display network.
+A modular vehicle electronics project adding an auxiliary battery bank, CAN bus
+telemetry, keyless entry, power windows, and a wireless sensor/display network.
+
+The hardware and firmware are designed to be **vehicle-agnostic** — compatible
+with any OBD2-equipped vehicle (US market 1996 and later). Vehicle-specific
+details such as wire colours, connector pinouts, and proprietary CAN IDs are
+noted only where they arise.
 
 ---
 
@@ -34,7 +38,7 @@ docs/            Design notes and reference documentation
 └─────────────────────────┘                              │  Nodes (any count)   │
                                                          │                      │
 ┌─────────────────────────┐                              │  • Arduino + OLED    │
-│  2008 Chevy Cobalt      │                              │  • ESP32 + TFT gauge │
+│  Target Vehicle         │                              │  • ESP32 + TFT gauge │
 │  OBD2 / CAN bus         │                              │  • Laptop dashboard  │
 │  ISO 15765-4            │                              │  • Phone / tablet    │
 │  500 kbaud, 11-bit ID   │                              └──────────────────────┘
@@ -74,12 +78,15 @@ docs/            Design notes and reference documentation
 
 ### CAN Bus Notes
 
-- Protocol: ISO 15765-4, 11-bit IDs, **500 kbps**
-- OBD2 request ID: `0x7DF`; ECM response ID: `0x7E8`
+- Protocol: ISO 15765-4, 11-bit IDs, **500 kbps** (standard for OBD2 since 2008;
+  some vehicles use 250 kbps — check your service manual)
+- OBD2 broadcast request ID: `0x7DF`; typical ECM response ID: `0x7E8`
 - The Waveshare board has an onboard isolated CAN transceiver — no external
   MCP2515/TJA1050 module needed.
-- **Disable the onboard 120 Ω termination jumper** when splicing into the
-  vehicle's existing network (e.g., via the OBD2 port).
+- **Disable the onboard 120 Ω termination jumper** when splicing into an
+  existing active network (e.g., via the OBD2 port).
+- Proprietary (non-OBD2) CAN IDs are vehicle-specific and must be reverse-
+  engineered or sourced from community databases for your make/model/year.
 
 ### I2C Pin Mapping (Waveshare JST SH1.0 connector)
 
@@ -96,13 +103,16 @@ docs/            Design notes and reference documentation
 
 All values are published as plain UTF-8 strings at ~10 Hz.
 
+The `vehicle/` prefix is a convention — rename it to match your project
+(e.g. `cobalt/`, `tacoma/`) by changing `MQTT_TOPIC_PREFIX` in the firmware.
+
 | Topic | Type | Description |
 |---|---|---|
-| `cobalt/engine/rpm` | u16 | Engine RPM (0–16383) |
-| `cobalt/engine/coolant_temp` | i8 | Coolant temperature °C |
-| `cobalt/engine/speed_kph` | u8 | Vehicle speed km/h |
-| `cobalt/battery/aux_voltage_mv` | u16 | Aux battery voltage in millivolts |
-| `cobalt/battery/aux_current_ma` | i32 | Aux battery current in milliamps |
+| `vehicle/engine/rpm` | u16 | Engine RPM (0–16383) |
+| `vehicle/engine/coolant_temp` | i8 | Coolant temperature °C |
+| `vehicle/engine/speed_kph` | u8 | Vehicle speed km/h |
+| `vehicle/battery/aux_voltage_mv` | u16 | Aux battery voltage in millivolts |
+| `vehicle/battery/aux_current_ma` | i32 | Aux battery current in milliamps |
 
 ---
 

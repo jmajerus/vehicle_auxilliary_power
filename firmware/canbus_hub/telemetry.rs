@@ -1,8 +1,9 @@
 // CarTelemetry — fixed data payload struct for the headless hub protocol
 //
-// The Waveshare hub only job is to populate this struct and broadcast it.
-// Display modules subscribe and decide how to render the values — the hub
-// never needs updating when the UI changes.
+// Vehicle-agnostic: all fields use standard OBD2 PIDs available on any
+// OBD2-compliant vehicle (US market 1996+). The hub populates this struct
+// and broadcasts it; display modules decide how to render the values.
+// The hub firmware never needs updating when the UI changes.
 //
 // Transmission wire format: raw bytes via I2C slave response  OR  MQTT JSON/binary.
 // Use `#[repr(C)]` to guarantee a stable, cross-platform memory layout so that

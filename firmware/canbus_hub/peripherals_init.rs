@@ -1,7 +1,8 @@
 // Waveshare Industrial ESP32-S3 — TWAI (CAN bus) + I2C initialization
 //
 // Target board : Waveshare ESP32-S3-RS485-CAN
-// CAN network  : 2008 Chevy Cobalt, ISO 15765-4 (11-bit ID, 500 kbaud)
+// CAN network  : Any OBD2 vehicle (ISO 15765-4, 11-bit ID, 500 kbaud typical)
+//                Some vehicles use 250 kbaud — check your service manual.
 // I2C bus      : GPIO1 = SDA, GPIO2 = SCL  (JST SH1.0 bottom connector)
 // Toolchain    : esp-idf-hal (std / esp-idf-sys path)
 //
@@ -18,7 +19,8 @@ fn main() -> anyhow::Result<()> {
     // 1. Take ownership of the chip's physical peripherals
     let peripherals = Peripherals::take()?;
 
-    // 2. Initialize the internal CAN bus (TWAI) at 500 kbps for the Cobalt
+    // 2. Initialize the internal CAN bus (TWAI) at 500 kbps
+    //    (change to 250_000 if your vehicle uses 250 kbaud — see service manual)
     //    The TX/RX pins are pre-wired internally on the Waveshare board.
     let twai_config = Configuration::new_500kbps();
     let mut _twai = TwaiDriver::new(

@@ -19,12 +19,12 @@
 //   # Edit /etc/mosquitto/mosquitto.conf — set listener 1883, allow_anonymous true
 //   /etc/init.d/mosquitto enable && /etc/init.d/mosquitto start
 //
-// MQTT topic layout:
-//   cobalt/engine/rpm              — u16, raw RPM
-//   cobalt/engine/coolant_temp     — i8,  degrees C
-//   cobalt/engine/speed_kph        — u8,  km/h
-//   cobalt/battery/aux_voltage_mv  — u16, millivolts (e.g. 13400 = 13.4 V)
-//   cobalt/battery/aux_current_ma  — i32, milliamps (negative = discharging)
+// MQTT topic layout (prefix is configurable — change MQTT_TOPIC_PREFIX below):
+//   vehicle/engine/rpm              — u16, raw RPM
+//   vehicle/engine/coolant_temp     — i8,  degrees C
+//   vehicle/engine/speed_kph        — u8,  km/h
+//   vehicle/battery/aux_voltage_mv  — u16, millivolts (e.g. 13400 = 13.4 V)
+//   vehicle/battery/aux_current_ma  — i32, milliamps (negative = discharging)
 //
 // Cargo.toml dependencies:
 //   esp-idf-svc = "0.48"
@@ -41,11 +41,15 @@ fn read_can_bus_rpm() -> u16 {
 
 fn main() -> anyhow::Result<()> {
     // Prerequisite: Wi-Fi must already be initialised and connected before
-    // reaching this point. The hub can act as an AP (SSID "Cobalt-Net") or
-    // connect to an existing in-car router.
+    // reaching this point. The hub connects to the GL.iNet router as a
+    // Wi-Fi client (station mode) — the router is the AP and broker host.
+
+    // Change this prefix to match your vehicle (e.g. "cobalt", "tacoma").
+    // All MQTT topics will be published under <MQTT_TOPIC_PREFIX>/engine/... etc.
+    const MQTT_TOPIC_PREFIX: &str = "vehicle";
 
     let mqtt_config = MqttClientConfiguration {
-        client_id: Some("cobalt_hub"),
+        client_id: Some("canbus_hub"),
         ..Default::default() // Standard port 1883, no TLS for local network
     };
 
@@ -65,7 +69,7 @@ fn main() -> anyhow::Result<()> {
         // QoS::AtMostOnce (fire-and-forget) is appropriate for high-frequency
         // sensor data where occasional dropped packets are acceptable.
         client.publish(
-            "cobalt/engine/rpm",
+            &format!("{}/engine/rpm", MQTT_TOPIC_PREFIX),
             QoS::AtMostOnce,
             false,
             format!("{}", rpm).as_bytes(),
