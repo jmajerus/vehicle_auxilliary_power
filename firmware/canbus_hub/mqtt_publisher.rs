@@ -59,6 +59,48 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::thread;
 
+// ── Software allowlist (second line of defence after hardware filter) ─────────
+//
+// The hardware TWAI filter in peripherals_init.rs provides coarse rejection at
+// zero CPU cost. This allowlist is the fine-grained complement: it gates every
+// individual frame ID before any decode logic runs, keeping the hot receive
+// loop fast even when the hardware filter admits a broad ID range.
+//
+// Design rules:
+//   • List only IDs (or ID ranges) you actively decode in decode_frame().
+//   • Add a new arm here whenever you add a match arm in decode_frame().
+//   • Prefer specific IDs over ranges — ranges should only cover broadcast
+//     groups where you genuinely intend to decode every member (e.g. all
+//     OBD2 ECU responses 0x7E8–0x7EF for multi-ECU vehicles).
+//   • Comment each arm with the system it represents so future you knows
+//     what breaks if you remove it.
+//
+// Systems explicitly excluded (do not add without a decode arm to match):
+//   0x500–0x5FF  Infotainment bus (radio, XM, HMI events)
+//   0x600–0x6FF  Climate control UI frames
+//   0x700–0x77E  Network management / node wakeup frames
+//   0x7DF        Our own OBD2 requests — no need to hear our own transmissions
+//
+#[inline(always)]
+fn is_relevant(id: u32) -> bool {
+    matches!(id,
+        // ── OBD2 ECU responses ─────────────────────────────────────────
+        0x7E8           // primary ECM response (standard single-ECU vehicles)
+        // | 0x7E9..=0x7EF  // additional ECU responses — uncomment if multi-ECU
+
+        // ── 2008 Cobalt native broadcast frames (fill in after sniffing) ──
+        // Uncomment each ID range as you confirm it in SavvyCAN.
+        // Until an ID is confirmed, leave it commented — unknown frames
+        // consume decode effort for no benefit.
+        //
+        // | 0x0C9   // ECM: engine RPM + throttle
+        // | 0x3E9   // ECM: vehicle speed
+        // | 0x1A1   // ECM: coolant temp + engine load
+        // | 0x2C1   // BCM: door ajar, window motor current
+        // | 0x4D1   // ABS: individual wheel speeds
+    )
+}
+
 // ── Frame dispatcher ──────────────────────────────────────────────────────────
 // Called for every frame received off the bus, regardless of source.
 //
@@ -203,8 +245,14 @@ fn main() -> anyhow::Result<()> {
                 // TODO: replace with actual TWAI receive call, e.g.:
                 // match twai.receive() {
                 //     Ok(frame) => {
+                //         // Software allowlist — drop uninteresting IDs before
+                //         // any decode work. is_relevant() is #[inline(always)]
+                //         // and compiles down to a small set of comparisons.
+                //         let id = frame.identifier();
+                //         if !is_relevant(id) { continue; }
+                //
                 //         let mut t = telem_can.lock().unwrap();
-                //         decode_frame(frame.identifier(), frame.data(), &mut t);
+                //         decode_frame(id, frame.data(), &mut t);
                 //     }
                 //     Err(esp_idf_hal::twai::TwaiError::NoMessage) => {
                 //         // Nothing on the bus right now — yield without sleeping
