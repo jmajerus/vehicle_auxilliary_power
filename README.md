@@ -131,16 +131,20 @@ Flash via USB-C using `espflash` or `probe-rs`.
 
 ### GL.iNet Broker Setup (one-time, via SSH)
 
+See [`firmware/glinet/`](firmware/glinet/) for the full setup script and
+`mosquitto.conf`. Quick start:
+
 ```bash
-opkg update && opkg install mosquitto-nossl
-# Edit /etc/mosquitto/mosquitto.conf:
-#   listener 1883
-#   allow_anonymous true
-/etc/init.d/mosquitto enable
-/etc/init.d/mosquitto start
+scp firmware/glinet/setup_mqtt_broker.sh root@192.168.8.1:/tmp/
+ssh root@192.168.8.1 ash /tmp/setup_mqtt_broker.sh
 ```
 
 Default GL.iNet LAN IP: `192.168.8.1`
+
+To monitor all live topics from the router once running:
+```bash
+mosquitto_sub -h 192.168.8.1 -t '#' -v
+```
 
 ---
 
