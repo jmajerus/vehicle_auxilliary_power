@@ -48,9 +48,12 @@ docs/            Design notes and reference documentation
 
 ### Design Principles
 
-- **Frozen hub firmware** — the CAN hub only polls OBD2 data and publishes MQTT
-  topics. It has no knowledge of displays, layouts, or rendering. It never needs
-  recompiling when the UI changes.
+- **Frozen hub firmware** — the CAN hub passively processes the raw CAN bus
+  stream and publishes MQTT topics. It has no knowledge of displays, layouts,
+  or rendering. Adding a new vehicle-specific parameter requires only a match
+  arm in `decode_frame()` and `is_relevant()` — the publish layer and all
+  display nodes are unaffected. OBD2 request/response is retained as an
+  optional fallback for any parameter the ECU does not broadcast natively.
 - **GL.iNet as broker host** — Mosquitto runs on the GL.iNet router (OpenWrt),
   which acts as the in-car Wi-Fi access point and message broker. The hub connects
   as a plain Wi-Fi client.
@@ -89,6 +92,22 @@ docs/            Design notes and reference documentation
 - Proprietary (non-OBD2) CAN IDs are vehicle-specific and must be reverse-
   engineered or sourced from community databases for your make/model/year.
 
+### CAN Bus Filtering
+
+Frames are rejected at two levels to keep the receive loop fast:
+
+| Level | Where | Mechanism | Cost |
+|---|---|---|---|
+| **Hardware filter** | TWAI peripheral | Code/mask register pair — frames are dropped before reaching the CPU FIFO | Zero CPU cycles |
+| **Software allowlist** | `is_relevant()` in `mqtt_publisher.rs` | Explicit per-ID opt-in before any decode logic runs | A few comparisons per frame |
+
+The hardware filter (configured in `peripherals_init.rs`) handles coarse
+volume rejection (e.g. infotainment/radio bursts). The software allowlist is
+the fine-grained complement: an ID must appear in `is_relevant()` **and** have
+a corresponding arm in `decode_frame()` before any processing happens.
+Systems with no decode arm (climate UI events, network management frames,
+ABS wheel speed until you add a decode arm) never touch the telemetry struct.
+
 ### I2C Pin Mapping (Waveshare JST SH1.0 connector)
 
 | JST Pin | Signal | Use |
@@ -103,17 +122,65 @@ docs/            Design notes and reference documentation
 ## MQTT Topics
 
 All values are published as plain UTF-8 strings at ~10 Hz.
+The `vehicle/` prefix is configurable via `MQTT_TOPIC_PREFIX` in the firmware.
 
-The `vehicle/` prefix is a convention — rename it to match your project
-(e.g. `cobalt/`, `tacoma/`) by changing `MQTT_TOPIC_PREFIX` in the firmware.
+### Engine Performance
 
-| Topic | Type | Description |
+| Topic | Unit | OBD2 PID | Description |
+|---|---|---|---|
+| `vehicle/engine/rpm` | integer | 0x0C | Engine RPM (0–16 383) |
+| `vehicle/engine/speed_kph` | integer | 0x0D | Vehicle speed km/h |
+| `vehicle/engine/load_pct` | 0–100 | 0x04 | Calculated engine load % |
+| `vehicle/engine/abs_load_pct` | 0–100 | 0x43 | Absolute load % |
+| `vehicle/engine/runtime_s` | integer | 0x1F | Run time since engine start (s) |
+| `vehicle/engine/maf_g_s` | float | 0x10 | Mass air flow rate (g/s) |
+| `vehicle/engine/fuel_rate_l_h` | float | 0x5E | Engine fuel rate (L/h) |
+| `vehicle/engine/module_voltage_mv` | integer | 0x42 | ECM supply voltage (mV) |
+
+### Throttle / Pedal
+
+| Topic | Unit | OBD2 PID | Description |
+|---|---|---|---|
+| `vehicle/engine/throttle_pct` | 0–100 | 0x11 | Absolute throttle position % |
+| `vehicle/engine/throttle_rel_pct` | 0–100 | 0x45 | Relative throttle position % |
+| `vehicle/engine/throttle_cmd_pct` | 0–100 | 0x4C | Commanded throttle actuator % |
+| `vehicle/engine/accel_pedal_d_pct` | 0–100 | 0x49 | Accelerator pedal position D % |
+| `vehicle/engine/accel_pedal_e_pct` | 0–100 | 0x4A | Accelerator pedal position E % |
+
+### Temperature
+
+| Topic | Unit | OBD2 PID | Description |
+|---|---|---|---|
+| `vehicle/engine/coolant_temp_c` | °C | 0x05 | Engine coolant temperature |
+| `vehicle/engine/intake_air_temp_c` | °C | 0x0F | Intake air temperature |
+| `vehicle/engine/ambient_temp_c` | °C | 0x46 | Ambient air temperature |
+| `vehicle/engine/oil_temp_c` | °C | 0x5C | Engine oil temperature |
+
+### Air / Fuel
+
+| Topic | Unit | OBD2 PID | Description |
+|---|---|---|---|
+| `vehicle/engine/intake_map_kpa` | kPa | 0x0B | Intake manifold absolute pressure |
+| `vehicle/engine/baro_kpa` | kPa | 0x33 | Barometric pressure |
+| `vehicle/engine/timing_advance_deg` | ° BTDC | 0x0E | Ignition timing advance |
+| `vehicle/engine/fuel_trim_short_b1` | % | 0x06 | Short-term fuel trim bank 1 |
+| `vehicle/engine/fuel_trim_long_b1` | % | 0x07 | Long-term fuel trim bank 1 |
+| `vehicle/engine/fuel_trim_short_b2` | % | 0x08 | Short-term fuel trim bank 2 |
+| `vehicle/engine/fuel_trim_long_b2` | % | 0x09 | Long-term fuel trim bank 2 |
+| `vehicle/engine/fuel_tank_pct` | 0–100 | 0x2F | Fuel tank level % |
+| `vehicle/engine/fuel_pressure_kpa` | kPa | 0x0A | Fuel rail pressure (gauge) |
+
+### Auxiliary Battery (I2C sensor — not OBD2)
+
+| Topic | Unit | Description |
 |---|---|---|
-| `vehicle/engine/rpm` | u16 | Engine RPM (0–16383) |
-| `vehicle/engine/coolant_temp` | i8 | Coolant temperature °C |
-| `vehicle/engine/speed_kph` | u8 | Vehicle speed km/h |
-| `vehicle/battery/aux_voltage_mv` | u16 | Aux battery voltage in millivolts |
-| `vehicle/battery/aux_current_ma` | i32 | Aux battery current in milliamps |
+| `vehicle/battery/aux_voltage_mv` | mV | Auxiliary battery voltage |
+| `vehicle/battery/aux_current_ma` | mA | Auxiliary battery current (negative = discharging) |
+
+Vehicle-specific topics (e.g. wheel speeds, door states, HVAC setpoints)
+are added to `decode_frame()` and the publish loop as native broadcast
+frame IDs are confirmed via bus sniffing. Display nodes subscribe only
+to the topics they need — adding topics is always non-breaking.
 
 ---
 
@@ -174,6 +241,18 @@ Sub-sheets:
 - `meshtastic_node.kicad_sch`
 - `GL_iNet_router.kicad_sch`
 - `12V_Relay_Module.kicad_sch`
+
+---
+
+## Roadmap
+
+| Item | Status | Notes |
+|---|---|---|
+| Fill in native broadcast IDs for target vehicle | Pending | Use SavvyCAN in passive mode; update `decode_frame()` and `is_relevant()` |
+| Wire up TWAI driver in `main()` | Pending | Pass `TwaiDriver` from `peripherals_init.rs` into `can_rx` thread |
+| Outboard Arduino I2C sensor nodes | Planned | INA219/226 for aux battery; additional analog sensors |
+| **Mobile dashboard app** | Future | Android / iOS widget-based dashboard connecting to the in-car MQTT broker over Wi-Fi. Users compose custom gauge layouts from the published topic catalogue — on-par with Torque Pro but talking to this hub instead of a Bluetooth OBD2 dongle. Each widget subscribes to a single MQTT topic; layouts are stored on-device. Cross-platform target: Flutter or React Native. |
+| `dashboard-rich.html` using canvas-gauges | Future | Alternate browser dashboard with richer visual gauge styles (needle, gradient fill, tick marks) |
 
 ---
 

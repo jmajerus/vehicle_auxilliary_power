@@ -157,22 +157,116 @@ fn decode_frame(id: u32, data: &[u8], telem: &mut CarTelemetry) {
         // ── OBD2 positive response (secondary path) ───────────────────────────
         // Only arrives when obd2_requester() has sent a service 0x01 request.
         // data layout: [PCI, 0x41, PID, byte_A, byte_B?, ...]
+        // Formulae are SAE J1979 service 0x01 standard.
         0x7E8 if data.len() >= 4 && data[1] == 0x41 => {
+            let a = data[3];
             match data[2] {
+                // ── Engine performance ────────────────────────────────────
                 0x0C if data.len() >= 5 => {
                     // RPM = (A * 256 + B) / 4
-                    telem.engine_rpm =
-                        (((data[3] as u16) << 8) | data[4] as u16) / 4;
-                }
-                0x05 => {
-                    // Coolant temp = A - 40 °C
-                    telem.coolant_temp_c = (data[3] as i16 - 40) as i8;
+                    telem.engine_rpm = (((a as u16) << 8) | data[4] as u16) / 4;
                 }
                 0x0D => {
                     // Speed = A km/h
-                    telem.vehicle_speed_kph = data[3];
+                    telem.vehicle_speed_kph = a;
                 }
-                _ => {}
+                0x04 => {
+                    // Engine load = A * 100 / 255 %
+                    telem.engine_load_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x43 if data.len() >= 5 => {
+                    // Absolute load = (A*256+B) * 100 / 255 %  (saturate at 100)
+                    let raw = (a as u32 * 256 + data[4] as u32) * 100 / 255;
+                    telem.abs_load_pct = raw.min(100) as u8;
+                }
+                0x1F if data.len() >= 5 => {
+                    // Engine runtime = A * 256 + B  seconds
+                    telem.engine_runtime_s = ((a as u16) << 8) | data[4] as u16;
+                }
+                0x10 if data.len() >= 5 => {
+                    // MAF raw = A * 256 + B  (units: 0.01 g/s)
+                    telem.maf_rate_raw = ((a as u16) << 8) | data[4] as u16;
+                }
+                0x5E if data.len() >= 5 => {
+                    // Fuel rate raw = A * 256 + B  (units: 0.05 L/h)
+                    telem.fuel_rate_raw = ((a as u16) << 8) | data[4] as u16;
+                }
+                0x42 if data.len() >= 5 => {
+                    // Module voltage = A * 256 + B  millivolts
+                    telem.module_voltage_mv = ((a as u16) << 8) | data[4] as u16;
+                }
+
+                // ── Throttle / pedal ──────────────────────────────────────
+                0x11 => {
+                    telem.throttle_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x45 => {
+                    telem.throttle_rel_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x4C => {
+                    telem.throttle_cmd_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x49 => {
+                    telem.accel_pedal_d_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x4A => {
+                    telem.accel_pedal_e_pct = (a as u16 * 100 / 255) as u8;
+                }
+
+                // ── Temperature ───────────────────────────────────────────
+                0x05 => {
+                    // Coolant temp = A - 40 °C
+                    telem.coolant_temp_c = (a as i16 - 40) as i8;
+                }
+                0x0F => {
+                    // Intake air temp = A - 40 °C
+                    telem.intake_air_temp_c = (a as i16 - 40) as i8;
+                }
+                0x46 => {
+                    // Ambient temp = A - 40 °C
+                    telem.ambient_air_temp_c = (a as i16 - 40) as i8;
+                }
+                0x5C => {
+                    // Oil temp = A - 40 °C
+                    telem.oil_temp_c = (a as i16 - 40) as i8;
+                }
+
+                // ── Air / fuel ────────────────────────────────────────────
+                0x0B => {
+                    // Intake MAP = A kPa
+                    telem.intake_map_kpa = a;
+                }
+                0x33 => {
+                    // Barometric pressure = A kPa
+                    telem.baro_kpa = a;
+                }
+                0x0E => {
+                    // Timing advance = A/2 - 64  degrees BTDC
+                    telem.timing_advance_deg = ((a / 2) as i16 - 64) as i8;
+                }
+                0x06 => {
+                    // STFT bank 1 = (A - 128) * 100 / 128  %
+                    telem.fuel_trim_short_b1 = ((a as i16 - 128) * 100 / 128) as i8;
+                }
+                0x07 => {
+                    telem.fuel_trim_long_b1 = ((a as i16 - 128) * 100 / 128) as i8;
+                }
+                0x08 => {
+                    telem.fuel_trim_short_b2 = ((a as i16 - 128) * 100 / 128) as i8;
+                }
+                0x09 => {
+                    telem.fuel_trim_long_b2 = ((a as i16 - 128) * 100 / 128) as i8;
+                }
+                0x2F => {
+                    // Fuel tank = A * 100 / 255 %
+                    telem.fuel_tank_pct = (a as u16 * 100 / 255) as u8;
+                }
+                0x0A => {
+                    // Fuel pressure = A * 3 kPa gauge  → store /3 to fit u8
+                    telem.fuel_pressure_kpa_div3 = a;
+                }
+
+                _ => {} // Unsupported PID — ignore
             }
         }
 
@@ -191,10 +285,40 @@ fn decode_frame(id: u32, data: &[u8], telem: &mut CarTelemetry) {
 #[allow(dead_code)]
 fn obd2_requester(twai: &mut impl esp_idf_hal::twai::Transmit) {
     // The PIDs to request — only those not covered by native broadcasts.
+    // Remove each PID below once you have confirmed a native broadcast that
+    // covers it. Start with the most critical (RPM, speed, coolant) and work
+    // down the list. A 1 Hz request rate for 20 PIDs adds < 1 % bus load.
     const FALLBACK_PIDS: &[u8] = &[
-        0x0C, // RPM          — remove once native broadcast is decoded
-        0x05, // Coolant temp — remove once native broadcast is decoded
-        0x0D, // Speed        — remove once native broadcast is decoded
+        // Engine performance
+        0x0C, // RPM
+        0x0D, // Speed
+        0x04, // Engine load
+        0x43, // Absolute load
+        0x1F, // Engine runtime
+        0x10, // MAF rate
+        0x5E, // Fuel rate
+        0x42, // Module voltage
+        // Throttle / pedal
+        0x11, // Throttle pos
+        0x45, // Rel throttle
+        0x4C, // Cmd throttle
+        0x49, // Accel pedal D
+        0x4A, // Accel pedal E
+        // Temperature
+        0x05, // Coolant temp
+        0x0F, // Intake air temp
+        0x46, // Ambient temp
+        0x5C, // Oil temp
+        // Air / fuel
+        0x0B, // Intake MAP
+        0x33, // Baro pressure
+        0x0E, // Timing advance
+        0x06, // STFT bank 1
+        0x07, // LTFT bank 1
+        0x08, // STFT bank 2
+        0x09, // LTFT bank 2
+        0x2F, // Fuel tank level
+        0x0A, // Fuel pressure
     ];
 
     for &pid in FALLBACK_PIDS {
@@ -294,13 +418,48 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         };
 
-        pub_topic("engine/rpm",             format!("{}", snapshot.engine_rpm))?;
-        pub_topic("engine/coolant_temp",    format!("{}", snapshot.coolant_temp_c))?;
-        pub_topic("engine/speed_kph",       format!("{}", snapshot.vehicle_speed_kph))?;
-        pub_topic("battery/aux_voltage_mv", format!("{}", snapshot.aux_battery_mv))?;
-        pub_topic("battery/aux_current_ma", format!("{}", snapshot.aux_current_ma))?;
+        // ── Engine performance ────────────────────────────────────────────
+        pub_topic("engine/rpm",              format!("{}",     snapshot.engine_rpm))?;
+        pub_topic("engine/speed_kph",        format!("{}",     snapshot.vehicle_speed_kph))?;
+        pub_topic("engine/load_pct",         format!("{}",     snapshot.engine_load_pct))?;
+        pub_topic("engine/abs_load_pct",     format!("{}",     snapshot.abs_load_pct))?;
+        pub_topic("engine/runtime_s",        format!("{}",     snapshot.engine_runtime_s))?;
+        // MAF raw counts are 0.01 g/s units — publish as g/s float string
+        pub_topic("engine/maf_g_s",          format!("{:.2}",  snapshot.maf_rate_raw as f32 / 100.0))?;
+        // Fuel rate raw counts are 0.05 L/h units — publish as L/h float string
+        pub_topic("engine/fuel_rate_l_h",    format!("{:.2}",  snapshot.fuel_rate_raw as f32 / 20.0))?;
+        pub_topic("engine/module_voltage_mv",format!("{}",     snapshot.module_voltage_mv))?;
 
-        // Vehicle-specific extras added here as native broadcast decoding
+        // ── Throttle / pedal ─────────────────────────────────────────────
+        pub_topic("engine/throttle_pct",     format!("{}",     snapshot.throttle_pct))?;
+        pub_topic("engine/throttle_rel_pct", format!("{}",     snapshot.throttle_rel_pct))?;
+        pub_topic("engine/throttle_cmd_pct", format!("{}",     snapshot.throttle_cmd_pct))?;
+        pub_topic("engine/accel_pedal_d_pct",format!("{}",     snapshot.accel_pedal_d_pct))?;
+        pub_topic("engine/accel_pedal_e_pct",format!("{}",     snapshot.accel_pedal_e_pct))?;
+
+        // ── Temperature ──────────────────────────────────────────────────
+        pub_topic("engine/coolant_temp_c",   format!("{}",     snapshot.coolant_temp_c))?;
+        pub_topic("engine/intake_air_temp_c",format!("{}",     snapshot.intake_air_temp_c))?;
+        pub_topic("engine/ambient_temp_c",   format!("{}",     snapshot.ambient_air_temp_c))?;
+        pub_topic("engine/oil_temp_c",       format!("{}",     snapshot.oil_temp_c))?;
+
+        // ── Air / fuel ───────────────────────────────────────────────────
+        pub_topic("engine/intake_map_kpa",   format!("{}",     snapshot.intake_map_kpa))?;
+        pub_topic("engine/baro_kpa",         format!("{}",     snapshot.baro_kpa))?;
+        pub_topic("engine/timing_advance_deg",format!("{}",    snapshot.timing_advance_deg))?;
+        pub_topic("engine/fuel_trim_short_b1",format!("{}",   snapshot.fuel_trim_short_b1))?;
+        pub_topic("engine/fuel_trim_long_b1", format!("{}",   snapshot.fuel_trim_long_b1))?;
+        pub_topic("engine/fuel_trim_short_b2",format!("{}",   snapshot.fuel_trim_short_b2))?;
+        pub_topic("engine/fuel_trim_long_b2", format!("{}",   snapshot.fuel_trim_long_b2))?;
+        pub_topic("engine/fuel_tank_pct",    format!("{}",     snapshot.fuel_tank_pct))?;
+        // Fuel pressure stored /3 to fit u8 — multiply back for kPa
+        pub_topic("engine/fuel_pressure_kpa",format!("{}",    snapshot.fuel_pressure_kpa_div3 as u16 * 3))?;
+
+        // ── Auxiliary battery (I2C sensor) ───────────────────────────────
+        pub_topic("battery/aux_voltage_mv",  format!("{}",     snapshot.aux_battery_mv))?;
+        pub_topic("battery/aux_current_ma",  format!("{}",     snapshot.aux_current_ma))?;
+
+        // Vehicle-specific extras go here as native broadcast decoding
         // is filled in above — display nodes subscribe only to what they want.
 
         thread::sleep(Duration::from_millis(100)); // 10 Hz
