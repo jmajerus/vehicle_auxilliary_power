@@ -121,66 +121,99 @@ ABS wheel speed until you add a decode arm) never touch the telemetry struct.
 
 ## MQTT Topics
 
-All values are published as plain UTF-8 strings at ~10 Hz.
+Values are published at ~10 Hz as **clustered JSON payloads** — multiple
+related measurements per message. This keeps the per-second message count
+low (5 messages / 100 ms instead of 26) so minimal-hardware display nodes
+(Arduino Nano, small OLED controller) only need to parse one message to get
+all the values they want to display.
+
 The `vehicle/` prefix is configurable via `MQTT_TOPIC_PREFIX` in the firmware.
+Display nodes subscribe only to the group(s) they need.
 
-### Engine Performance
+### `vehicle/engine/core`
+The essentials every display wants. Subscribe to this and nothing else for
+a minimal node.
 
-| Topic | Unit | OBD2 PID | Description |
+```json
+{"rpm":3200,"spd":65,"load":45,"thr":32,"cool":87,"rt":1234,"mv":14100}
+```
+
+| Key | Unit | OBD2 PID | Description |
 |---|---|---|---|
-| `vehicle/engine/rpm` | integer | 0x0C | Engine RPM (0–16 383) |
-| `vehicle/engine/speed_kph` | integer | 0x0D | Vehicle speed km/h |
-| `vehicle/engine/load_pct` | 0–100 | 0x04 | Calculated engine load % |
-| `vehicle/engine/abs_load_pct` | 0–100 | 0x43 | Absolute load % |
-| `vehicle/engine/runtime_s` | integer | 0x1F | Run time since engine start (s) |
-| `vehicle/engine/maf_g_s` | float | 0x10 | Mass air flow rate (g/s) |
-| `vehicle/engine/fuel_rate_l_h` | float | 0x5E | Engine fuel rate (L/h) |
-| `vehicle/engine/module_voltage_mv` | integer | 0x42 | ECM supply voltage (mV) |
+| `rpm` | integer | 0x0C | Engine RPM |
+| `spd` | km/h | 0x0D | Vehicle speed |
+| `load` | 0–100 % | 0x04 | Calculated engine load |
+| `thr` | 0–100 % | 0x11 | Absolute throttle position |
+| `cool` | °C | 0x05 | Coolant temperature |
+| `rt` | seconds | 0x1F | Engine run time since start |
+| `mv` | mV | 0x42 | ECM supply voltage |
 
-### Throttle / Pedal
+### `vehicle/engine/airfuel`
+Tuning and diagnostic parameters.
 
-| Topic | Unit | OBD2 PID | Description |
+```json
+{"map":101,"baro":100,"maf":12.50,"ign":12,"stb1":2,"ltb1":-1,"stb2":0,"ltb2":1,"fp":350,"aload":48}
+```
+
+| Key | Unit | OBD2 PID | Description |
 |---|---|---|---|
-| `vehicle/engine/throttle_pct` | 0–100 | 0x11 | Absolute throttle position % |
-| `vehicle/engine/throttle_rel_pct` | 0–100 | 0x45 | Relative throttle position % |
-| `vehicle/engine/throttle_cmd_pct` | 0–100 | 0x4C | Commanded throttle actuator % |
-| `vehicle/engine/accel_pedal_d_pct` | 0–100 | 0x49 | Accelerator pedal position D % |
-| `vehicle/engine/accel_pedal_e_pct` | 0–100 | 0x4A | Accelerator pedal position E % |
+| `map` | kPa | 0x0B | Intake manifold absolute pressure |
+| `baro` | kPa | 0x33 | Barometric pressure |
+| `maf` | g/s | 0x10 | Mass air flow rate |
+| `ign` | ° BTDC | 0x0E | Ignition timing advance |
+| `stb1` | % | 0x06 | Short-term fuel trim bank 1 |
+| `ltb1` | % | 0x07 | Long-term fuel trim bank 1 |
+| `stb2` | % | 0x08 | Short-term fuel trim bank 2 |
+| `ltb2` | % | 0x09 | Long-term fuel trim bank 2 |
+| `fp` | kPa | 0x0A | Fuel rail pressure (gauge) |
+| `aload` | 0–100 % | 0x43 | Absolute load |
 
-### Temperature
+### `vehicle/engine/thermal`
+All temperature channels — for a dedicated thermal/coolant display.
 
-| Topic | Unit | OBD2 PID | Description |
+```json
+{"cool":87,"iair":25,"oil":92,"amb":22}
+```
+
+| Key | Unit | OBD2 PID | Description |
 |---|---|---|---|
-| `vehicle/engine/coolant_temp_c` | °C | 0x05 | Engine coolant temperature |
-| `vehicle/engine/intake_air_temp_c` | °C | 0x0F | Intake air temperature |
-| `vehicle/engine/ambient_temp_c` | °C | 0x46 | Ambient air temperature |
-| `vehicle/engine/oil_temp_c` | °C | 0x5C | Engine oil temperature |
+| `cool` | °C | 0x05 | Coolant temperature |
+| `iair` | °C | 0x0F | Intake air temperature |
+| `oil` | °C | 0x5C | Engine oil temperature |
+| `amb` | °C | 0x46 | Ambient air temperature |
 
-### Air / Fuel
+### `vehicle/engine/fuel`
+Range and economy display.
 
-| Topic | Unit | OBD2 PID | Description |
+```json
+{"tank":78,"rate":4.20,"ped_d":40,"ped_e":41,"thr_rel":43,"thr_cmd":45}
+```
+
+| Key | Unit | OBD2 PID | Description |
 |---|---|---|---|
-| `vehicle/engine/intake_map_kpa` | kPa | 0x0B | Intake manifold absolute pressure |
-| `vehicle/engine/baro_kpa` | kPa | 0x33 | Barometric pressure |
-| `vehicle/engine/timing_advance_deg` | ° BTDC | 0x0E | Ignition timing advance |
-| `vehicle/engine/fuel_trim_short_b1` | % | 0x06 | Short-term fuel trim bank 1 |
-| `vehicle/engine/fuel_trim_long_b1` | % | 0x07 | Long-term fuel trim bank 1 |
-| `vehicle/engine/fuel_trim_short_b2` | % | 0x08 | Short-term fuel trim bank 2 |
-| `vehicle/engine/fuel_trim_long_b2` | % | 0x09 | Long-term fuel trim bank 2 |
-| `vehicle/engine/fuel_tank_pct` | 0–100 | 0x2F | Fuel tank level % |
-| `vehicle/engine/fuel_pressure_kpa` | kPa | 0x0A | Fuel rail pressure (gauge) |
+| `tank` | 0–100 % | 0x2F | Fuel tank level |
+| `rate` | L/h | 0x5E | Engine fuel rate |
+| `ped_d` | 0–100 % | 0x49 | Accelerator pedal position D |
+| `ped_e` | 0–100 % | 0x4A | Accelerator pedal position E |
+| `thr_rel` | 0–100 % | 0x45 | Relative throttle position |
+| `thr_cmd` | 0–100 % | 0x4C | Commanded throttle actuator |
 
-### Auxiliary Battery (I2C sensor — not OBD2)
+### `vehicle/battery`
+Auxiliary battery monitor (I2C INA219/226 sensor — not OBD2).
 
-| Topic | Unit | Description |
+```json
+{"mv":13400,"ma":2500}
+```
+
+| Key | Unit | Description |
 |---|---|---|
-| `vehicle/battery/aux_voltage_mv` | mV | Auxiliary battery voltage |
-| `vehicle/battery/aux_current_ma` | mA | Auxiliary battery current (negative = discharging) |
+| `mv` | mV | Auxiliary battery voltage |
+| `ma` | mA | Auxiliary battery current (negative = discharging) |
 
-Vehicle-specific topics (e.g. wheel speeds, door states, HVAC setpoints)
-are added to `decode_frame()` and the publish loop as native broadcast
-frame IDs are confirmed via bus sniffing. Display nodes subscribe only
-to the topics they need — adding topics is always non-breaking.
+Vehicle-specific groups (e.g. `vehicle/wheels` for ABS wheel speeds,
+`vehicle/doors` for BCM state) are added as native broadcast frame IDs
+are confirmed. Adding a new group is always non-breaking — existing
+nodes are unaffected.
 
 ---
 
