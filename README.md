@@ -1,7 +1,8 @@
-# Vehicle Auxiliary Power — KiCad Project
+# Vehicle Auxiliary-Powered Subsystems
 
-A modular vehicle electronics project adding an auxiliary battery bank, CAN bus
-telemetry, keyless entry, power windows, and a wireless sensor/display network.
+A modular vehicle electronics project providing an auxiliary power infrastructure
+and a growing collection of subsystems that run on it: CAN bus telemetry,
+keyless entry, power windows, and a wireless sensor/display network.
 
 The hardware and firmware are designed to be **vehicle-agnostic** — compatible
 with any OBD2-equipped vehicle (US market 1996 and later). Vehicle-specific
